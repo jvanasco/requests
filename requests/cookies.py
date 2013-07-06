@@ -164,6 +164,31 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
         except KeyError:
             return default
 
+    def get_cookie(self, name, default=None, domain=None, path=None):
+        """Dict-like get_cookie() that also supports optional domain and path args in
+        order to resolve naming collisions from using one cookie jar over
+        multiple domains. Caution: operation is O(n), not O(1)."""
+        try:
+            toReturn = None
+            for cookie in iter(self):
+                if cookie.name == name:
+                    if domain is None or cookie.domain == domain:
+                        if path is None or cookie.path == path:
+                            if toReturn is not None:  # if there are multiple cookies that meet passed in criteria
+                                raise CookieConflictError('There are multiple cookies with name, %r' % (name))
+                            toReturn = cookie  # we will eventually return this as long as no cookie conflict
+            if toReturn:
+                return toReturn
+            raise KeyError('name=%r, domain=%r, path=%r' % (name, domain, path))
+        except KeyError:
+            return default
+            
+    def remove_cookie_by_name(self, name, domain=None, path=None):
+        """Deletes a cookie given a name. Wraps cookielib.CookieJar's remove_cookie_by_name().
+        Simply a convenience tool to simplify the interface and imports.
+        """
+        remove_cookie_by_name(self, name , domain=domain, path=path )
+            
     def set(self, name, value, **kwargs):
         """Dict-like set() that also supports optional domain and path args in
         order to resolve naming collisions from using one cookie jar over

@@ -188,6 +188,94 @@ class RequestsTestCase(unittest.TestCase):
         assert r.json()['cookies']['foo'] == 'bar'
         # Make sure the session cj is still the custom one
         assert s.cookies is cj
+        
+    
+    def test_cookiejar_session_operations(self):
+
+        # do this in a session
+        s = requests.session()
+
+        # ensure the class
+        assert isinstance(s.cookies,requests.cookies.RequestsCookieJar)
+
+        # ensure it iterates
+        assert len(s.cookies) is 0
+
+        # set a coookie
+        s.cookies.set('cookie','nom.nom.nom')
+
+        # ensire it's set
+        assert len(s.cookies) is 1
+
+        # get a cookie value
+        cookie_value = s.cookies.get('cookie')
+        assert cookie_value == 'nom.nom.nom'
+
+        # gets a cookie
+        cookie_item = s.cookies.get_cookie('cookie')
+        assert isinstance(cookie_item,cookielib.Cookie)
+
+        # we can kill a cookie
+        s.cookies.remove_cookie_by_name('cookie')
+        assert len(s.cookies) is 0
+
+        # we can set a cookie
+        s.cookies.set_cookie( cookie_item )
+        assert len(s.cookies) is 1
+
+        # and ensure it's what we expect
+        cookie_value = s.cookies.get(cookie_item.name)
+        assert cookie_value ==cookie_item.value
+
+
+    def test_cookiejar_session_domains(self):
+
+        # do this in a session
+        s = requests.session()
+
+        # set a coookie
+        s.cookies.set('cookie','chocolate chip',domain='example.com')
+
+        # ensire it's set
+        assert len(s.cookies) is 1
+
+        # set another coookie for a different domain
+        s.cookies.set('cookie','chocolate chunk',domain='www.example.com')
+
+        # ensire it's set
+        assert len(s.cookies) is 2
+
+        # get a cookie value
+        try:
+            s.cookies.get('cookie')
+            raise ValueError('excpected issue')
+        except requests.cookies.CookieConflictError , e :
+            pass
+
+        # we can get cookies out, correctly
+        value_1 = s.cookies.get('cookie',domain='example.com')
+        assert value_1 == 'chocolate chip'
+
+        # both cookies out, correctly
+        value_2 = s.cookies.get('cookie',domain='www.example.com')
+        assert value_2 == 'chocolate chunk'
+
+        # and remove them
+        s.cookies.remove_cookie_by_name('cookie',domain='example.com')
+        assert len(s.cookies) is 1
+
+        # just to be sure...
+        value_1 = s.cookies.get('cookie',domain='example.com')
+        assert value_1 is None
+
+        # and this is okay...
+        value_2 = s.cookies.get('cookie',domain='www.example.com')
+        assert value_2 == 'chocolate chunk'
+
+
+
+
+    
     
     def test_requests_in_history_are_not_overridden(self):
         resp = requests.get(httpbin('redirect/3'))
