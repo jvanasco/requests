@@ -1741,17 +1741,16 @@ class TestRequests:
         assert 'Content-Length' not in prepared_request.headers
 
     def test_custom_redirect_mixin(self, httpbin):
-        """This tests using a custom mixin to overwrite `get_redirect_target`.
-        Most developers will not want to use this implementation detail.
+        """Tests a custom mixin to overwrite ``get_redirect_target``.
 
-        This test ensures a custom Session class can support detecting a certain
-        type of malformed redirect response:
-
+        Ensures a subclassed ``requests.Session`` can handle a certain type of
+        malformed redirect responses.
+        
         1. original request receives a proper response: 302 redirect
         2. following the redirect, a malformed response is given:
-            status code = HTTP-200
+            status code = HTTP 200
             location = alternate url
-        3. the mixin catches the edge case and follows the redirect
+        3. the custom session catches the edge case and follows the redirect
         """
         url_final = httpbin('html')
         querystring_malformed = urlencode({'location': url_final})

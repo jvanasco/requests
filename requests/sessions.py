@@ -88,7 +88,7 @@ def merge_hooks(request_hooks, session_hooks, dict_class=OrderedDict):
 class SessionRedirectMixin(object):
 
     def get_redirect_target(self, resp):
-        """Receives a Response. Returns a redirect URI or `None`"""
+        """Receives a Response. Returns a redirect URI or ``None``"""
         if resp.is_redirect:
             return resp.headers['location']
         return None
