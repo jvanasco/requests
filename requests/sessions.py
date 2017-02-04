@@ -97,25 +97,23 @@ class SessionRedirectMixin(object):
                           verify=True, cert=None, proxies=None, **adapter_kwargs):
         """Receives a Response. Returns a generator of Responses."""
 
-        i = 0
         hist = [] # keep track of history
 
         url = self.get_redirect_target(resp)
         while url:
             prepared_request = req.copy()
 
-            if i > 0:
-                # Update history and keep track of redirects.
-                hist.append(resp)
-                new_hist = list(hist)
-                resp.history = new_hist
+            # Update history and keep track of redirects.
+            # resp.history must ignore the original request in this loop
+            hist.append(resp)
+            resp.history = hist[1:]
 
             try:
                 resp.content  # Consume socket so it can be released
             except (ChunkedEncodingError, ContentDecodingError, RuntimeError):
                 resp.raw.read(decode_content=False)
 
-            if i >= self.max_redirects:
+            if len(resp.history) >= self.max_redirects:
                 raise TooManyRedirects('Exceeded %s redirects.' % self.max_redirects, response=resp)
 
             # Release the connection back into the pool.
@@ -200,7 +198,6 @@ class SessionRedirectMixin(object):
 
             # extract redirect url, if any, for the next loop
             url = self.get_redirect_target(resp)
-            i += 1
             yield resp
 
     def rebuild_auth(self, prepared_request, response):
